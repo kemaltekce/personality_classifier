@@ -1,5 +1,6 @@
 from collections import Counter
 import random
+import re
 
 from sklearn.model_selection import train_test_split
 
@@ -56,7 +57,15 @@ class PersonContainer:
                     ignored_posts))
         self.persons = new_persons
 
+    def replace_digits(self):
+        for person in self.persons:
+            person.posts = [
+                re.sub(r'([^\s]*\d[^\s]*)', '$digit', x) for x in person.posts]
 
+
+# TODO check if container exists if not create one. if it does load from
+# payload. right now we have to use the PostsSplitter pipe to generate the
+# container which is used later in the other pipes
 class PostsSplitter(Pipe):
 
     CHUNK_SIZE = 10
@@ -74,6 +83,14 @@ class EvenlyDistributor(Pipe):
     def run(self):
         container = self.payload['persons_container']
         container.evenly_distribute()
+        self.payload['persons'] = container.persons
+
+
+class DigitReplacer(Pipe):
+
+    def run(self):
+        container = self.payload['persons_container']
+        container.replace_digits()
         self.payload['persons'] = container.persons
 
 
