@@ -60,7 +60,13 @@ class PersonContainer:
     def replace_digits(self):
         for person in self.persons:
             person.posts = [
-                re.sub(r'([^\s]*\d[^\s]*)', '$digit', x) for x in person.posts]
+                re.sub(r'(\S*\d\S*)', '$digit', x) for x in person.posts]
+
+    def replace_links(self):
+        for person in self.persons:
+            person.posts = [
+                re.sub(r'(\S*www\.[a-z|\-]{2,}\.[a-z]{2,}\S*)', '$link', x)
+                for x in person.posts]
 
 
 # TODO check if container exists if not create one. if it does load from
@@ -91,6 +97,14 @@ class DigitReplacer(Pipe):
     def run(self):
         container = self.payload['persons_container']
         container.replace_digits()
+        self.payload['persons'] = container.persons
+
+
+class LinkReplacer(Pipe):
+
+    def run(self):
+        container = self.payload['persons_container']
+        container.replace_links()
         self.payload['persons'] = container.persons
 
 
