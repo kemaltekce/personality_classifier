@@ -1,4 +1,5 @@
 from collections import Counter
+import itertools
 import random
 import re
 
@@ -58,15 +59,22 @@ class PersonContainer:
         self.persons = new_persons
 
     def replace_digits(self):
-        for person in self.persons:
-            person.posts = [
-                re.sub(r'(\S*\d\S*)', '$digit', x) for x in person.posts]
+        self._replace_patterns_in_post(r'(\S*\d\S*)', '$digit')
 
     def replace_links(self):
+        self._replace_patterns_in_post(
+            r'(\S*www\.[a-z|\-]{2,}\.[a-z]{2,}\S*)', '$link')
+
+    def replace_personality_codes(self):
+        personalities = [('i', 'e'), ('n', 's'), ('t', 'f'), ('j', 'p')]
+        personalities = [
+            ''.join(x) for x in list(itertools.product(*personalities))]
+        self._replace_patterns_in_post(
+            r'\S*%s\S*' % '\S*|\S*'.join(personalities), '')
+
+    def _replace_patterns_in_post(self, pattern, replacer):
         for person in self.persons:
-            person.posts = [
-                re.sub(r'(\S*www\.[a-z|\-]{2,}\.[a-z]{2,}\S*)', '$link', x)
-                for x in person.posts]
+            person.posts = [re.sub(pattern, replacer, x) for x in person.posts]
 
 
 # TODO check if container exists if not create one. if it does load from
@@ -105,6 +113,14 @@ class LinkReplacer(Pipe):
     def run(self):
         container = self.payload['persons_container']
         container.replace_links()
+        self.payload['persons'] = container.persons
+
+
+class PersonalityCodeReplacer(Pipe):
+
+    def run(self):
+        container = self.payload['persons_container']
+        container.replace_personality_codes()
         self.payload['persons'] = container.persons
 
 

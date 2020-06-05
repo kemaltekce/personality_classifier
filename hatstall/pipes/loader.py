@@ -50,5 +50,5 @@ class PersonalityPostLoader(Pipe):
             persons = []
             for row in data:
                 if '|||' in row[1][1:-1]:
-                    persons.append(Person(row[0], row[1][1:-1]))
+                    persons.append(Person(row[0], row[1][1:-1].lower()))
         self.payload['persons'] = persons
