@@ -1,4 +1,5 @@
 import csv
+import os
 
 from hatstall.pipes import Pipe
 
@@ -43,7 +44,10 @@ class Person:
 class PersonalityPostLoader(Pipe):
 
     def run(self):
-        with open('../data/mbti_1.csv') as file:
+        path = 'data/mbti_1.csv'
+        cwd = os.getcwd()
+        path = '../' + path if 'prototypes' in cwd else path
+        with open(path) as file:
             data = csv.reader(file, delimiter=',')
             # ignore header
             next(data, None)

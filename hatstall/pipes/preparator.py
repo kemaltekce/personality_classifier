@@ -70,58 +70,62 @@ class PersonContainer:
         personalities = [
             ''.join(x) for x in list(itertools.product(*personalities))]
         self._replace_patterns_in_post(
-            r'\S*%s\S*' % '\S*|\S*'.join(personalities), '')
+            r'\S*%s\S*' % r'\S*|\S*'.join(personalities), '')
 
     def _replace_patterns_in_post(self, pattern, replacer):
         for person in self.persons:
             person.posts = [re.sub(pattern, replacer, x) for x in person.posts]
 
 
-# TODO check if container exists if not create one. if it does load from
-# payload. right now we have to use the PostsSplitter pipe to generate the
-# container which is used later in the other pipes
-class PostsSplitter(Pipe):
-
-    CHUNK_SIZE = 10
+class PreparationPipe(Pipe):
 
     def run(self):
         persons = self.payload['persons']
-        container = PersonContainer(persons)
+        if 'persons_container' in self.payload.keys():
+            container = self.payload['persons_container']
+        else:
+            container = PersonContainer(persons)
+
+        self.prepare(container)
+        self.payload['persons'] = container.persons
+
+        if 'persons_container' not in self.payload.keys():
+            self.payload['persons_container'] = container
+
+    def prepare(self):
+        raise NotImplementedError
+
+
+class PostsSplitter(PreparationPipe):
+
+    CHUNK_SIZE = 10
+
+    def prepare(self, container):
         container.split_posts(self.CHUNK_SIZE)
-        self.payload['persons_container'] = container
-        self.payload['persons'] = container.persons
 
 
-class EvenlyDistributor(Pipe):
+class EvenlyDistributor(PreparationPipe):
 
-    def run(self):
-        container = self.payload['persons_container']
+    def prepare(self, container):
         container.evenly_distribute()
-        self.payload['persons'] = container.persons
 
 
-class DigitReplacer(Pipe):
+class DigitReplacer(PreparationPipe):
 
-    def run(self):
-        container = self.payload['persons_container']
+    def prepare(self, container):
         container.replace_digits()
-        self.payload['persons'] = container.persons
 
 
-class LinkReplacer(Pipe):
+class LinkReplacer(PreparationPipe):
 
-    def run(self):
-        container = self.payload['persons_container']
+    def prepare(self, container):
         container.replace_links()
-        self.payload['persons'] = container.persons
 
 
-class PersonalityCodeReplacer(Pipe):
+class PersonalityCodeReplacer(PreparationPipe):
 
-    def run(self):
-        container = self.payload['persons_container']
+    def prepare(self, container):
         container.replace_personality_codes()
-        self.payload['persons'] = container.persons
 
 
 class TrainTestSplitter(Pipe):

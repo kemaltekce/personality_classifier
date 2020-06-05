@@ -11,7 +11,7 @@ class Pipe:
         return self.__class__.__name__
 
 
-class BasePipeline:
+class PipelineContainer:
     def __init__(self, pipeline, nickname=None):
         self.pipeline = pipeline
         self.nickname = nickname
@@ -39,36 +39,34 @@ class Pipeline:
 
 
 class PipelineSystem:
-    def __init__(self, pipelines, mode):
-        self.pipelines = self._load_pipelines(pipelines)
-        # TODO use mode switch between test train and cross val
-        self.mode = mode
+    def __init__(self, pipelines):
+        self.pipeline_containers = self._load_pipelines(pipelines)
 
     def _load_pipelines(self, pipelines):
         pipelines = [
-            BasePipeline(pipeline, nickname) for nickname, pipeline
+            PipelineContainer(pipeline, nickname) for nickname, pipeline
             in pipelines]
         return pipelines
 
     def run(self):
-        for pipeline in self.pipelines:
-            if pipeline.nickname == 'preperation':
-                prep_pipeline = pipeline.pipeline
+        for pl_container in self.pipeline_containers:
+            if pl_container.nickname == 'preperation':
+                prep_pipeline = pl_container.pipeline
                 print("--- Running preparation pipeline ---")
                 prep_pipeline.run()
-            elif pipeline.nickname == 'modelling':
+            elif pl_container.nickname == 'modelling':
                 print("--- Running modelling pipeline ---")
                 train_x, train_y, _, _ = (
                     prep_pipeline.payload['train_test'])
-                model_pipeline = pipeline.pipeline
+                model_pipeline = pl_container.pipeline
                 model_pipeline.fit(train_x, train_y)
                 prep_pipeline.payload['model'] = model_pipeline
-            elif pipeline.nickname == 'evaluation':
+            elif pl_container.nickname == 'evaluation':
                 print("--- Running evaluation pipeline ---")
-                pipeline.pipeline.payload = prep_pipeline.payload
-                pipeline.pipeline.reinitialize_pipes()
-                pipeline.pipeline.run()
+                pl_container.pipeline.payload = prep_pipeline.payload
+                pl_container.pipeline.reinitialize_pipes()
+                pl_container.pipeline.run()
             else:
                 raise ValueError(
                     "Don't recognize pipeline nickname: %s" %
-                    pipeline.nickname)
+                    pl_container.nickname)
