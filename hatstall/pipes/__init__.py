@@ -66,6 +66,11 @@ class PipelineSystem:
                 pl_container.pipeline.payload = prep_pipeline.payload
                 pl_container.pipeline.reinitialize_pipes()
                 pl_container.pipeline.run()
+            elif pl_container.nickname == 'prediction':
+                print("--- Running prediction pipeline ---")
+                pl_container.pipeline.payload = {'model': model_pipeline}
+                pl_container.pipeline.reinitialize_pipes()
+                pl_container.pipeline.run()
             else:
                 raise ValueError(
                     "Don't recognize pipeline nickname: %s" %

@@ -56,3 +56,23 @@ class PersonalityPostLoader(Pipe):
                 if '|||' in row[1][1:-1]:
                     persons.append(Person(row[0], row[1][1:-1].lower()))
         self.payload['persons'] = persons
+
+
+class PredictionDataLoader(Pipe):
+
+    def run(self):
+        path = 'data/for_pred.csv'
+        cwd = os.getcwd()
+        path = '../' + path if 'prototypes' in cwd else path
+        with open(path) as file:
+            data = csv.reader(file, delimiter=',')
+            names = []
+            persons = []
+            # we need the dummy personality for the person class to work
+            dummy = 'I'
+            for row in data:
+                if '|||' in row[1]:
+                    persons.append(Person(dummy, row[1].lower()))
+                    names.append(row[0])
+        self.payload['persons'] = persons
+        self.payload['names'] = names

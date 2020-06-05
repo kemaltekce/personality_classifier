@@ -58,3 +58,17 @@ class TestDataTokenChecker(Pipe):
         test_y = np.array(test_y)
         test_y = list(test_y[keep])
         self.payload['train_test'] = train_x, train_y, test_x, test_y
+
+
+class Predictor(Pipe):
+
+    def run(self):
+        model = self.payload['model']
+        data = self.payload['persons_container']
+        X = data.get_posts()
+        pred = model.predict(X)
+
+        names = self.payload['names']
+        print('--- Here are the predictions ---')
+        for i, name in enumerate(names):
+            print(f"{name} is an {pred[i]}")

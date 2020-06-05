@@ -1,27 +1,32 @@
 from sklearn.linear_model import LogisticRegression
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.pipeline import Pipeline as ModelPipeline, FeatureUnion
+from sklearn.pipeline import FeatureUnion, Pipeline as ModelPipeline
 from sklearn.preprocessing import MinMaxScaler
 
 from hatstall.pipes import Pipeline as CustomPipeline, PipelineSystem
-from hatstall.pipes.engineer import PostsJoiner, AverageWordCalculator
-from hatstall.pipes.loader import PersonalityPostLoader
-from hatstall.pipes.model import Evaluator
+from hatstall.pipes.engineer import AverageWordCalculator, PostsJoiner
+from hatstall.pipes.loader import PersonalityPostLoader, PredictionDataLoader
+from hatstall.pipes.model import Evaluator, Predictor
 from hatstall.pipes.preparator import (
-    PostsSplitter, EvenlyDistributor, TrainTestSplitter, DigitReplacer,
-    LinkReplacer, PersonalityCodeReplacer)
+    DigitReplacer, EvenlyDistributor, LinkReplacer, PostsSplitter,
+    PersonalityCodeReplacer, TrainTestSplitter)
 
 
 PreparationPipeline = CustomPipeline
 EvaluationPipeline = CustomPipeline
+PredictionPipeline = CustomPipeline
+
+GLOBEL_PREP_PIPES = [
+        ('persona', PersonalityCodeReplacer),
+        ('link', LinkReplacer),
+        ('digit', DigitReplacer),
+]
 
 PIPELINE_SYSTEM = PipelineSystem([
     ('preperation', PreparationPipeline([
         ('loader', PersonalityPostLoader),
         ('splitter', PostsSplitter),
-        ('persona', PersonalityCodeReplacer),
-        ('link', LinkReplacer),
-        ('digit', DigitReplacer),
+        *GLOBEL_PREP_PIPES,
         ('evenfier', EvenlyDistributor),
         ('traintest', TrainTestSplitter)
     ])),
@@ -42,5 +47,10 @@ PIPELINE_SYSTEM = PipelineSystem([
     ])),
     ('evaluation', EvaluationPipeline([
         ('eval', Evaluator)
-    ]))
+    ])),
+    ('prediction', PredictionPipeline([
+        ('loader', PredictionDataLoader),
+        *GLOBEL_PREP_PIPES,
+        ('predictor', Predictor),
+    ])),
 ])
